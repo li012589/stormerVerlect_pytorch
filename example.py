@@ -2,7 +2,7 @@ import torch
 from torch.autograd import grad
 import numpy as np
 from scipy import integrate
-import timeit
+import time
 
 from src import stormerVerlet
 
@@ -20,7 +20,8 @@ def harmonic(alpha,t,eta):
     return 0.5*(eta[:,:num]**2).sum(-1)+alpha*0.5*(eta[:,num:]**2).sum(-1)
 
 
-# FOR SCIPY
+# FOR SCIPY SANITY CHECK
+start = time.time()
 def diff(f,t,x):
     res= f(t,x)
     return grad(torch.matmul(res,torch.ones(res.shape).to(res)),x)[0]
@@ -43,9 +44,12 @@ Ts = sciInt.t
 Y = np.transpose(sciInt.y,(1,0))
 P = Y[:,Y.shape[-1]//2]
 Q = Y[:,0]
+end = time.time()
+timeScipy = end-start
 
 
 # STORMERVERLECT
+start = time.time()
 def HH(q,p):
     ETA = torch.cat((q,p),dim=-1)
     return harmonic(1,1,ETA)
@@ -53,7 +57,10 @@ def HH(q,p):
 mQ,mP = stormerVerlet(q,p,HH,h,step)
 mQ = mQ.reshape(-1).numpy()
 mP = mP.reshape(-1).numpy()
+end = time.time()
+timeStormerVerlect = end-start
 
+print("Scipy time:",timeScipy,"Pytorch time:",timeStormerVerlect)
 
 # MATPLOTLIB PLOT
 from matplotlib import pyplot as plt
