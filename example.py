@@ -7,17 +7,18 @@ import time
 from src import stormerVerlet
 
 # INITAL CONDITIONS
-q = torch.randn(1,1)
-p = torch.randn(1,1)
+q = torch.randn(1,1).double()
+p = torch.randn(1,1).double()
 
 h = 0.001
 step = 10000
 
-eta = torch.cat((q,p),dim=-1)
+eta = torch.cat((q,p),dim=-1).double()
 
 def harmonic(alpha,t,eta):
     num = eta.shape[1]//2
     return 0.5*(eta[:,:num]**2).sum(-1)+alpha*0.5*(eta[:,num:]**2).sum(-1)
+Horigin = harmonic(1,0,eta)
 
 
 # FOR SCIPY SANITY CHECK
@@ -55,12 +56,19 @@ def HH(q,p):
     return harmonic(1,1,ETA)
 
 mQ,mP = stormerVerlet(q,p,HH,h,step)
-mQ = mQ.reshape(-1).numpy()
-mP = mP.reshape(-1).numpy()
+mQ = mQ.reshape(-1)
+mP = mP.reshape(-1)
 end = time.time()
 timeStormerVerlect = end-start
 
+# TESTS
 print("Scipy time:",timeScipy,"Pytorch time:",timeStormerVerlect)
+etascipy = torch.tensor([Q[-1],P[-1]],dtype=torch.float64).reshape(1,-1)
+Hscipy = harmonic(1,0,etascipy)
+errorScipy = Horigin-Hscipy
+Hstormerverlect = HH(mQ[-1].reshape(1,1),mP[-1].reshape(1,1))
+errorstormerverlect = Horigin-Hstormerverlect
+print("Error of scipy:",errorScipy.item(),"Error of stormerVerlet:",errorstormerverlect.item())
 
 # MATPLOTLIB PLOT
 from matplotlib import pyplot as plt
@@ -68,17 +76,17 @@ from matplotlib import pyplot as plt
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(211)
 ax1.plot(Ts,Q,label="scipy.RK45",linewidth=2)
-ax1.plot(np.arange(0,h*step,h),mQ,label="stormerVerlet",linewidth=2)
+ax1.plot(np.arange(0,h*step,h),mQ.numpy(),label="stormerVerlet",linewidth=2)
 plt.legend()
 
 ax2 = fig1.add_subplot(212)
 ax2.plot(Ts,P,label="scipy.RK45",linewidth=2)
-ax2.plot(np.arange(0,h*step,h),mP,label="stormerVerlet",linewidth=2)
+ax2.plot(np.arange(0,h*step,h),mP.numpy(),label="stormerVerlet",linewidth=2)
 plt.legend()
 
 fig1 = plt.figure()
 plt.plot(Q,P,'o',label="scipy.RK45",markersize=4)
-plt.plot(mQ,mP,'+',label = "stormerVerlet",markersize=4)
+plt.plot(mQ.numpy(),mP.numpy(),'+',label = "stormerVerlet",markersize=4)
 
 plt.legend()
 plt.show()
