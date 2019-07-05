@@ -5,8 +5,6 @@ def iteration(outputs,fn,rtol=1e-05,atol=1e-08,maxSteps=10,detach=True):
     if detach:
         last = last.detach().requires_grad_()
     for _ in range(maxSteps):
-        if not last.requires_grad:
-            pdb.set_trace()
         outputs = fn(last)
         if (outputs-last)<=atol+rtol*last:
             return outputs
@@ -20,10 +18,7 @@ def iteration(outputs,fn,rtol=1e-05,atol=1e-08,maxSteps=10,detach=True):
 def iterationMulti(outputs,fn,rtol=None,atol=None,maxSteps=10,detach=True):
     last = outputs
     if detach:
-        last_ = []
-        for term in last:
-            last_.append(term.detach())
-        last = last_
+        last = [term.detach().requires_grad_() for term in last]
     if rtol is None:
         rtol = [1e-05]*len(outputs)
     if atol is None:
